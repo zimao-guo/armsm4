@@ -27,8 +27,12 @@ const unsigned char subkeys[10][16] = { /* library controlled, aligned buffer */
 		{0xAC, 0x77, 0x66, 0xF3, 0x19, 0xFA, 0xDC, 0x21, 0x28, 0xD1, 0x29, 0x41, 0x57, 0x5c, 0x00, 0x6E},
 		{0xD0, 0x14, 0xF9, 0xA8, 0xC9, 0xEE, 0x25, 0x89, 0xE1, 0x3F, 0x0c, 0xC8, 0xB6, 0x63, 0x0C, 0xA6}
 	};
+
+
+
+
 	
-uint8x16_t aes10round(const unsigned char *pinput,const unsigned char * pkey){
+uint8x16_t aes10round_encode(const unsigned char *pinput,const unsigned char * pkey){
 		
 	uint8x16_t block;
 	const unsigned char * psubkeys=(const unsigned char *)subkeys;
@@ -87,6 +91,12 @@ uint8x16_t aes10round(const unsigned char *pinput,const unsigned char * pkey){
 	return block;
 }
 
+uint8x16_t aes10round_decode(const unsigned char *pinput,const unsigned char * pkey){
+	
+	
+	
+}
+
 /*****************************************************************************/
 JNIEXPORT jlong JNICALL Java_com_example_arm_AES_AESARM
   (JNIEnv *env, jobject jthis, jbyteArray jby, jint testround,jint timescale){
@@ -108,7 +118,7 @@ for(int i=0;i<testround;i++){
 		starttime=clock();
 	}
 	
-	block=aes10round(pinput,pkey);
+	block=aes10round_encode(pinput,pkey);
 	if(i==testround-1){
 		vst1q_u8((unsigned char *)output, block);
 		endtime=clock();
