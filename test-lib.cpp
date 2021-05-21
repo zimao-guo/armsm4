@@ -11,6 +11,9 @@
 /*****************************************************************************/
 const unsigned char input[16] = { /* user input, unaligned buffer */
 		0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0xf4
+	};	
+const unsigned char key01[16] = { /* user input, unaligned buffer */
+		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
 	};
 const unsigned char key[16] = { /* user input, unaligned buffer */
 		0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x9 , 0xcf, 0x4f, 0x3c
@@ -26,6 +29,9 @@ const unsigned char subkeys[10][16] = { /* library controlled, aligned buffer */
 		{0xEA, 0xD2, 0x73, 0x21, 0xB5, 0x8D, 0xBA, 0xD2, 0x31, 0x2B, 0xF5, 0x60, 0x7F, 0x8D, 0x29, 0x2F},
 		{0xAC, 0x77, 0x66, 0xF3, 0x19, 0xFA, 0xDC, 0x21, 0x28, 0xD1, 0x29, 0x41, 0x57, 0x5c, 0x00, 0x6E},
 		{0xD0, 0x14, 0xF9, 0xA8, 0xC9, 0xEE, 0x25, 0x89, 0xE1, 0x3F, 0x0c, 0xC8, 0xB6, 0x63, 0x0C, 0xA6}
+	};
+const unsigned char key00[16]= { /* user input, unaligned buffer */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 , 0x00, 0x00, 0x00
 	};
 
 
@@ -91,10 +97,61 @@ uint8x16_t aes10round_encode(const unsigned char *pinput,const unsigned char * p
 	return block;
 }
 
-uint8x16_t aes10round_decode(const unsigned char *pinput,const unsigned char * pkey){
+uint8x16_t aes10round_decode(uint8x16_t pinput,const unsigned char * pkey){
+	uint8x16_t block=pinput;
+	uint8x16_t keyfor00;
+	keyfor00=vld1q_u8((const unsigned char *)key00);
+	const unsigned char * psubkeys=(const unsigned char *)subkeys;
+	// AES single round decryption(1)
+	block = vaesdq_u8(block, vld1q_u8(psubkeys+9*16));
+	block = veorq_u8(block, vld1q_u8(psubkeys+8*16));
+	// AES mix columns(1)
+	block = vaesimcq_u8(block);
+	// AES single round decryption(2)
+	block = vaesdq_u8(block, keyfor00);
+	block = veorq_u8(block, vld1q_u8(psubkeys+7*16));
+	// AES mix columns(2)
+	block = vaesimcq_u8(block);
+	// AES single round decryption(3)
+	block = vaesdq_u8(block, keyfor00);
+	block = veorq_u8(block, vld1q_u8(psubkeys+6*16));
+	// AES mix columns(3)
+	block = vaesimcq_u8(block);
+	// AES single round decryption(4)
+	block = vaesdq_u8(block, keyfor00);
+	block = veorq_u8(block, vld1q_u8(psubkeys+5*16));
+	// AES mix columns(4)
+	block = vaesimcq_u8(block);
+	// AES single round decryption(5)
+	block = vaesdq_u8(block, keyfor00);
+	block = veorq_u8(block, vld1q_u8(psubkeys+4*16));
+	// AES mix columns(5)
+	block = vaesimcq_u8(block);
+	// AES single round decryption(6)
+	block = vaesdq_u8(block, keyfor00);
+	block = veorq_u8(block, vld1q_u8(psubkeys+3*16));
+	// AES mix columns(6)
+	block = vaesimcq_u8(block);
+	// AES single round decryption(7)
+	block = vaesdq_u8(block, keyfor00);
+	block = veorq_u8(block, vld1q_u8(psubkeys+2*16));
+	// AES mix columns(7)
+	block = vaesimcq_u8(block);
+	// AES single round decryption(8)
+	block = vaesdq_u8(block, keyfor00);
+	block = veorq_u8(block, vld1q_u8(psubkeys+1*16));
+	// AES mix columns(8)
+	block = vaesimcq_u8(block);
+	// AES single round decryption(9)
+	block = vaesdq_u8(block, keyfor00);
+	block = veorq_u8(block, vld1q_u8(psubkeys+0*16));
+	// AES mix columns(9)
+	block = vaesimcq_u8(block);
+	// AES single round decryption(10)
+	block = vaesdq_u8(block, keyfor00);
+	block = veorq_u8(block, vld1q_u8(key));
 	
-	
-	
+	return block;
 }
 
 /*****************************************************************************/
@@ -117,8 +174,12 @@ for(int i=0;i<testround;i++){
 	if(i==0){
 		starttime=clock();
 	}
-	
+	//block = vld1q_u8(pinput);
+	//block = vaeseq_u8(block,vld1q_u8(pkey));
+	//block = vaesdq_u8(block,vld1q_u8(pkey));
 	block=aes10round_encode(pinput,pkey);
+	//vst1q_u8((unsigned char *)input01, block);
+	block=aes10round_decode(block,pkey);
 	if(i==testround-1){
 		vst1q_u8((unsigned char *)output, block);
 		endtime=clock();
