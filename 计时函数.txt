@@ -1,6 +1,6 @@
-git test 
-test branch  
->>>>>>> dev
+//git test 
+//test branch
+//test branch 
   #include <sys/time.h>
 
   int main()
